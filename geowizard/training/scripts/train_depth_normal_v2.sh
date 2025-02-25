@@ -1,9 +1,10 @@
 # accelerate config
-root_path=''
-output_dir=''
+root_path='/home/hmi/Downloads/renders/'
+csv_path = '/home/hmi/Downloads/csv_split/train.csv'
+output_dir='/home/hmi/Downloads/geowizards'
 
-pretrained_model_name_or_path='stabilityai/stable-diffusion-2'
-train_batch_size=4
+pretrained_model_name_or_path='lemonaddie/geowizard'
+train_batch_size=1
 gradient_accumulation_steps=8
 num_train_epochs=100
 checkpointing_steps=1000
@@ -13,10 +14,11 @@ dataloader_num_workers=8
 tracker_project_name='pretrain_tracker'
 seed=1234
 
-accelerate launch --config_file ../node_config/8gpu.yaml \
+accelerate launch --config_file ../node_config/1gpu.yaml \
                 ../training/train_depth_normal_v2.py \
                   --pretrained_model_name_or_path $pretrained_model_name_or_path \
                   --dataset_path $root_path  \
+                  --csv_path $csv_path \
                   --output_dir $output_dir \
                   --checkpointing_steps $checkpointing_steps \
                   --train_batch_size $train_batch_size \
