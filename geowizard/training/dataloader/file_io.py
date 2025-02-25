@@ -80,6 +80,68 @@ def read_depth_normal_hypersim(depth_path, normal_path, K, metric_scale):
     normal /= (np.linalg.norm(normal, ord=2, axis=2, keepdims=True) + 1e-5)
     return depth, normal
 
+def read_synthesis_depth_png(file_path):
+    """
+    Reads a 16-bit grayscale PNG depth image and converts it to a normalized floating-point depth map.
+    
+    Args:
+        file_path (str): Path to the 16-bit PNG depth image.
+    
+    Returns:
+        depth_norm (np.ndarray): Depth values normalized to the [0, 1] range.
+    """
+    # Read the image with unchanged flag to preserve 16-bit depth
+    depth_image = cv2.imread(file_path, cv2.IMREAD_UNCHANGED)
+    if depth_image is None:
+        raise ValueError(f"Failed to load image at {file_path}")
+    
+    # Verify that the image is indeed 16-bit
+    if depth_image.dtype != np.uint16:
+        raise ValueError("Image is not 16-bit")
+    
+    # get mask from depth, max value is invalid depth, set it to 0
+    mask = depth_image >= 35000
+
+    # Convert the 16-bit image to floating-point and normalize to [0, 1]
+    depth_norm = depth_image.astype(np.float32) / 65535.0
+    
+    return depth_norm, mask
+
+def read_synthesis_normal_png(file_path):
+    # Open and convert the image to RGB
+    normal_image = Image.open(file_path).convert('RGB')
+
+    # Convert to NumPy array and normalize to [0, 1]
+    normal_array = np.array(normal_image).astype(np.float32) / 255.0
+
+    # Split into R, G, B channels
+    r = normal_array[:, :, 0]
+    g = normal_array[:, :, 1]
+    b = normal_array[:, :, 2]
+
+    # Decode to [-1, 1] range
+    px = r * 2.0 - 1.0
+    py = g * 2.0 - 1.0
+    pz = b * 2.0 - 1.0
+
+    # Compute magnitude and normalize
+    magnitude = np.sqrt(px**2 + py**2 + pz**2) + 1e-10  # Avoid division by zero
+    nx = px / magnitude
+    ny = py / magnitude
+    nz = pz / magnitude
+
+    # Stack normalized components
+    normalized_normal_map = np.stack((nx, ny, nz), axis=2)
+    normalized_normal_map *= -1
+    return normalized_normal_map
+
+def read_depth_normal_synthesis(depth_path, normal_path):
+    depth, mask = read_synthesis_depth_png(depth_path)
+    depth[mask] = 10.
+    normal = read_synthesis_normal_png(normal_path)
+    normal[mask] = np.array([0., 0., -1.])
+    return depth, normal, mask
+
 def read_depth_normal_replica(depth_path, normal_path, K, metric_scale):
 
     depth = cv2.imread(depth_path, -1)

@@ -74,8 +74,5 @@ def resize_max_res_tensor(input_tensor, mode, recom_resolution=768):
                                             scale_factor=downscale_factor,
                                             mode='bilinear',
                                             align_corners=False)
-
-    if mode == 'depth':
-        return resized_input_tensor / downscale_factor
-    else:
-        return resized_input_tensor
+    
+    return resized_input_tensor

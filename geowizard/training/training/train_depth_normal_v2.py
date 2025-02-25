@@ -646,7 +646,7 @@ def main():
                 class_embedding = geo_embedding
 
                 # predict the noise residual and compute the loss.
-                unet_input = torch.cat((rgb_latents.repeat(2,1,1,1), noisy_geo_latents), dim=1)
+                unet_input = torch.cat((rgb_latents.repeat(2, 1, 1, 1), noisy_geo_latents), dim=1)
 
                 noise_pred = unet(unet_input, 
                                 timesteps, 
