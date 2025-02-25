@@ -107,6 +107,34 @@ def read_synthesis_depth_png(file_path):
     
     return depth_norm, mask
 
+def read_synthesis_depth_8bit_png(file_path):
+    """
+    Reads a 16-bit grayscale PNG depth image and converts it to a normalized floating-point depth map.
+    
+    Args:
+        file_path (str): Path to the 16-bit PNG depth image.
+    
+    Returns:
+        depth_norm (np.ndarray): Depth values normalized to the [0, 1] range.
+    """
+    # Read the image with unchanged flag to preserve 16-bit depth
+    depth_image =cv2.imread(str(file_path), cv2.IMREAD_GRAYSCALE)
+
+    if depth_image is None:
+        raise ValueError(f"Failed to load image at {file_path}")
+    
+    # Verify that the image is indeed 16-bit
+    if depth_image.dtype != np.uint16:
+        raise ValueError("Image is not 16-bit")
+    
+    # get mask from depth, max value is invalid depth, set it to 0
+    mask = depth_image >= 128
+
+    # Convert the 16-bit image to floating-point and normalize to [0, 1]
+    depth_norm = depth_image.astype(np.float32) / 255.0
+    
+    return depth_norm, mask
+
 def read_synthesis_normal_png(file_path):
     # Open and convert the image to RGB
     normal_image = Image.open(file_path).convert('RGB')
