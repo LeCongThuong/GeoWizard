@@ -31,4 +31,5 @@ accelerate launch --config_file ../node_config/1gpu.yaml \
                   --dataloader_num_workers $dataloader_num_workers \
                   --tracker_project_name $tracker_project_name \
                   --enable_xformers_memory_efficient_attention \
-                  # --use_ema
+                  --use_8bit_adam \
+                  --use_ema
