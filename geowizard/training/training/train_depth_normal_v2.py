@@ -351,22 +351,20 @@ def main():
     logger.info("loading the noise scheduler and the tokenizer from {}".format(args.pretrained_model_name_or_path), main_process_only=True)
     vae = AutoencoderKL.from_pretrained(args.pretrained_model_name_or_path, subfolder='vae')
     text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_name_or_path, subfolder='text_encoder')
+    unet = UNet2DConditionModel.from_pretrained('lemonaddie/geowizard', subfolder='unet_v2')
 
-    unet = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet",
-                                                    in_channels=8, sample_size=96,
-                                                    class_embed_type = 'projection',
-                                                    projection_class_embeddings_input_dim = 4,
-                                                    low_cpu_mem_usage=False,
-                                                    ignore_mismatched_sizes=True)
+    # unet = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet",
+    #                                                 in_channels=8, sample_size=96,
+    #                                                 class_embed_type = 'projection',
+    #                                                 projection_class_embeddings_input_dim = 4,
+    #                                                 low_cpu_mem_usage=False,
+    #                                                 ignore_mismatched_sizes=True)
     
-    # change the input layer of unet
-    sd2_conv_in = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet").conv_in
-    unet.conv_in.weight = Parameter(sd2_conv_in.weight.repeat(1,2,1,1) / 2)
-    logger.info("loading the unet input layer from {}".format(args.pretrained_model_name_or_path), main_process_only=True)
+    # # change the input layer of unet
+    # sd2_conv_in = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet").conv_in
+    # unet.conv_in.weight = Parameter(sd2_conv_in.weight.repeat(1,2,1,1) / 2)
+    # logger.info("loading the unet input layer from {}".format(args.pretrained_model_name_or_path), main_process_only=True)
 
-    # using EMA
-    if args.use_ema:
-        ema_unet = EMAModel(unet.parameters(), model_cls=UNet2DConditionModel, model_config=unet.config)
 
     # Freeze vae and text_encoder and set unet to trainable.
     vae.requires_grad_(False)
@@ -490,6 +488,10 @@ def main():
         unet, optimizer, train_loader, lr_scheduler
     )
 
+
+    # using EMA
+    if args.use_ema:
+        ema_unet = EMAModel(unet.parameters(), model_cls=UNet2DConditionModel, model_config=unet.config)
     if args.use_ema:
         ema_unet.to(accelerator.device)
 
@@ -582,7 +584,11 @@ def main():
         text_input_ids = text_inputs.input_ids.to(text_encoder.device)
         text_embed = text_encoder(text_input_ids)[0].to(weight_dtype)
         text_embed_list.append(text_embed)
+    del text_encoder  # Delete the object
+    import gc
+    gc.collect()      # Run garbage collection to free CPU memory
 
+    torch.cuda.empty_cache()  # Clear GPU memory
     # using the epochs to training the model
     for epoch in range(first_epoch, args.num_train_epochs):
         unet.train() 

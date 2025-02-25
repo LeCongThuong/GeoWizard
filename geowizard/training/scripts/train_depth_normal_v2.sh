@@ -1,11 +1,11 @@
 # accelerate config
 root_path='/home/hmi/Downloads/renders/'
-csv_path = '/home/hmi/Downloads/csv_split/train.csv'
+csv_path='/home/hmi/Downloads/csv_split/train.csv'
 output_dir='/home/hmi/Downloads/geowizards'
 
-pretrained_model_name_or_path='lemonaddie/geowizard'
-train_batch_size=1
-gradient_accumulation_steps=8
+pretrained_model_name_or_path="stabilityai/stable-diffusion-2"
+train_batch_size=2
+gradient_accumulation_steps=16
 num_train_epochs=100
 checkpointing_steps=1000
 learning_rate=3e-5
@@ -31,4 +31,4 @@ accelerate launch --config_file ../node_config/1gpu.yaml \
                   --dataloader_num_workers $dataloader_num_workers \
                   --tracker_project_name $tracker_project_name \
                   --enable_xformers_memory_efficient_attention \
-                  --use_ema
+                  # --use_ema

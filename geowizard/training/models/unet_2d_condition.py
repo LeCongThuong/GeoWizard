@@ -984,7 +984,6 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 # `Timesteps` does not contain any weights and will always return f32 tensors
                 # there might be better ways to encapsulate this.
                 class_labels = class_labels.to(dtype=sample.dtype)
-
             class_emb = self.class_embedding(class_labels).to(dtype=sample.dtype)
 
             if self.config.class_embeddings_concat:
