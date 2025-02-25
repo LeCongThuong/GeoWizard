@@ -60,7 +60,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="GeoWizard")
     
     parser.add_argument(
-        "--input_perturbation", type=float, default=0, help="The scale of input perturbation. Recommended 0.1."
+        "--input_perturbation", type=float, default=0.1, help="The scale of input perturbation. Recommended 0.1."
     )
 
     parser.add_argument(
