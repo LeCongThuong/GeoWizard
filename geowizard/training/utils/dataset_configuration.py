@@ -8,6 +8,7 @@ import sys
 sys.path.append("..")
 
 from dataloader.mix_loader import MixDataset
+from dataloader.synthesis_loader import SynthesisDataset
 from torch.utils.data import DataLoader
 from dataloader import transforms
 import os
@@ -15,6 +16,7 @@ import os
 
 # Get Dataset Here
 def prepare_dataset(data_dir=None,
+                    csv_path=None,
                     batch_size=1,
                     test_batch=1,
                     datathread=4,
@@ -23,7 +25,7 @@ def prepare_dataset(data_dir=None,
     # set the config parameters
     dataset_config_dict = dict()
     
-    train_dataset = MixDataset(data_dir=data_dir)
+    train_dataset = SynthesisDataset(data_dir=data_dir, csv_path=csv_path)
 
     img_height, img_width = train_dataset.get_img_size()
 

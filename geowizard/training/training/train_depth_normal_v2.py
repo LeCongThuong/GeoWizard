@@ -85,7 +85,15 @@ def parse_args():
         required=True,
         help="The Root Dataset Path.",
     )
-    
+
+    parser.add_argument(
+        "--csv_path",
+        type=str,
+        default="/data/synthesis.csv",
+        required=True,
+        help="Path to train dataset csv"
+    )
+
     parser.add_argument(
         "--max_train_samples",
         type=int,
@@ -455,10 +463,11 @@ def main():
     # get the training dataset
     with accelerator.main_process_first():
         train_loader, dataset_config_dict = prepare_dataset(data_dir=args.dataset_path,
-                                                                    batch_size=args.train_batch_size,
-                                                                    test_batch=1,
-                                                                    datathread=args.dataloader_num_workers,
-                                                                    logger=logger)
+                                                            csv_path=args.csv_path,
+                                                            batch_size=args.train_batch_size,
+                                                            test_batch=1,
+                                                            datathread=args.dataloader_num_workers,
+                                                            logger=logger)
 
     # because the optimizer not optimized every time, so we need to calculate how many steps it optimizes,
     # it is usually optimized by 
