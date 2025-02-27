@@ -219,14 +219,13 @@ def  log_validation(
     domain = "indoors"
     color_map = "Spectral"
 
-    os.makedirs(output_dir, exist_ok=True)
+    Path(output_dir).mkdir(exist_ok=True, parents=True)
     epoch_output_dir = os.path.join(output_dir, f"{str(epoch)}")
-    os.makedirs(epoch_output_dir, exist_ok=True)
+    Path(epoch_output_dir).mkdir(exist_ok=True, parents=True)
     output_dir_depth_color = os.path.join(epoch_output_dir, "depth")
-    os.makedirs(output_dir_depth_color, exist_ok=True)
+    Path(output_dir_depth_color).mkdir(exist_ok=True, parents=True)
     output_dir_normal_color = os.path.join(epoch_output_dir, "normal")
-    os.makedirs(output_dir_normal_color, exist_ok=True)
-
+    Path(output_dir_normal_color).mkdir(exist_ok=True, parents=True)
       # -------------------- Inference and saving --------------------
     with torch.no_grad():
         for test_file in tqdm(test_files, desc="Validate Depth & Normal", leave=True):

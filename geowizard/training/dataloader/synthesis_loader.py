@@ -29,6 +29,7 @@ class SynthesisDataset(Dataset):
         super(SynthesisDataset, self).__init__()
 
         self.data_dir = data_dir
+        print("data dir: ", self.data_dir)
         self.transform = transform
         self.img_size = (768, 768)
         self.csv_path = csv_path
@@ -39,7 +40,7 @@ class SynthesisDataset(Dataset):
         self.num_img = len(self.data_info)
 
         self.samples = []
-        for image_idx in range(self.num_img):
+        for image_idx in range(1):
             sample = dict()
             sample['rgb'] = os.path.join(self.data_dir, self.data_info.iloc[image_idx, 0])
             sample['depth'] = os.path.join(self.data_dir, self.data_info.iloc[image_idx, 1])

@@ -47,7 +47,7 @@ import accelerate
 import cv2
 from utils.de_normalized import align_scale_shift
 from utils.depth2normal import *
-from uitls.train_validation import log_validation
+from utils.train_validation import log_validation
 from utils.dataset_configuration import prepare_dataset, depth_scale_shift_normalization,  resize_max_res_tensor
 
 from PIL import Image
@@ -479,7 +479,7 @@ def main():
     # get the training dataset
     with accelerator.main_process_first():
         train_loader, dataset_config_dict = prepare_dataset(data_dir=args.dataset_path,
-                                                            csv_path=args.csv_path,
+                                                            csv_path=args.csv_train_path,
                                                             batch_size=args.train_batch_size,
                                                             test_batch=1,
                                                             datathread=args.dataloader_num_workers,
@@ -602,11 +602,11 @@ def main():
         text_input_ids = text_inputs.input_ids.to(text_encoder.device)
         text_embed = text_encoder(text_input_ids)[0].to(weight_dtype)
         text_embed_list.append(text_embed)
-    del text_encoder  # Delete the object
-    import gc
-    gc.collect()      # Run garbage collection to free CPU memory
+    # del text_encoder  # Delete the object
+    # import gc
+    # gc.collect()      # Run garbage collection to free CPU memory
 
-    torch.cuda.empty_cache()  # Clear GPU memory
+    # torch.cuda.empty_cache()  # Clear GPU memory
     # using the epochs to training the model
     for epoch in range(first_epoch, args.num_train_epochs):
         unet.train() 
