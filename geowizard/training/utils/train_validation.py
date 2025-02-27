@@ -101,11 +101,11 @@ def read_synthesis_depth_png(file_path, threshold=35000):
     # Convert the 16-bit image to floating-point and normalize to [0, 1]
     depth_norm = depth_image.astype(np.float32) / 65535.0
     
-    return depth_norm, mask
+    return depth_norm, ~mask
 
 def read_synthesis_normal_png(file_path):
     # Open and convert the image to RGB
-    normal_image = Image.open(file_path).convert('RGB').resize((512, 512), Image.NEAREST)
+    normal_image = Image.open(file_path).convert('RGB')
 
     # Convert to NumPy array and normalize to [0, 1]
     normal_array = np.array(normal_image).astype(np.float32) / 255.0
@@ -145,12 +145,13 @@ def cal_metrics(data_dir, pred_root_dir, test_csv_file):
     std_list = []
 
     test_data_info = pd.read_csv(test_csv_file, header=None)
-    test_data_info.columns = ["image_path", "gt_normal_path", "depth_path"]
+    test_data_info.columns = ["image_path", "depth_path", "gt_normal_path"]
     for index, row in tqdm(test_data_info.iterrows()):
-        img_path = os.path.join(data_dir, row["file_name"])
+        img_path = os.path.join(data_dir, row["image_path"])
         np_gt_path = os.path.join(data_dir, row["gt_normal_path"])
         depth_path = os.path.join(data_dir, row["depth_path"])
-        rgb_name_base = os.path.splitext(row)[0]
+        print(depth_path)
+        rgb_name_base = Path(img_path).stem
         pred_name_base = rgb_name_base + "_pred"
         pred_path = os.path.join(pred_root_dir, f"{pred_name_base}.npy")
         np_pred = torch.unsqueeze(torch.from_numpy((np.load(pred_path))), 0)
@@ -175,8 +176,6 @@ def  log_validation(
                 tokenizer,
                 unet,
                 args,
-                accelerator,
-                weight_dtype,
                 scheduler,
                 epoch,  
             ):
@@ -209,6 +208,7 @@ def  log_validation(
     output_dir = args.output_valid_dir
     data_info = pd.read_csv(csv_file, header=None) 
     test_files = data_info[0].tolist()
+    sorted(test_files)
     n_images = len(data_info)
     logging.info(f"Found {n_images} images")
 
@@ -216,7 +216,7 @@ def  log_validation(
     ensemble_size= 3
     processing_res = 768
     match_input_res = True
-    domain = "indoors"
+    domain = "indoor"
     color_map = "Spectral"
 
     Path(output_dir).mkdir(exist_ok=True, parents=True)

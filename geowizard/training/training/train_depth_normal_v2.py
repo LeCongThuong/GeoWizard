@@ -757,8 +757,6 @@ def main():
                 tokenizer=tokenizer,
                 unet=unet,
                 args=args,
-                accelerator=accelerator,
-                weight_dtype=weight_dtype,
                 scheduler=noise_scheduler,
                 epoch=epoch,
             )
