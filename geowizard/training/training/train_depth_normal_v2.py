@@ -47,6 +47,7 @@ import accelerate
 import cv2
 from utils.de_normalized import align_scale_shift
 from utils.depth2normal import *
+from uitls.train_validation import log_validation
 from utils.dataset_configuration import prepare_dataset, depth_scale_shift_normalization,  resize_max_res_tensor
 
 from PIL import Image
@@ -87,7 +88,15 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--csv_path",
+        "--csv_train_path",
+        type=str,
+        default="/data/synthesis.csv",
+        required=True,
+        help="Path to train dataset csv"
+    )
+
+    parser.add_argument(
+        "--csv_valid_path",
         type=str,
         default="/data/synthesis.csv",
         required=True,
@@ -280,6 +289,13 @@ def parse_args():
         default=5,
         help="Run validation every X epochs.",
     )
+
+    parser.add_argument(
+        "--output_valid_dir",
+        type=str,
+        default="valid",
+        help="Validation directory.",
+    )
     
     parser.add_argument(
         "--tracker_project_name",
@@ -289,7 +305,9 @@ def parse_args():
             "The `project_name` argument passed to Accelerator.init_trackers for"
             " more information see https://huggingface.co/docs/accelerate/v0.17.0/en/package_reference/accelerator#accelerate.Accelerator"
         ),
-    )      
+    ) 
+    # add parameters: valid_csv, output_valid_dir
+
     # get the local rank
     args = parser.parse_args()
     env_local_rank = int(os.environ.get("LOCAL_RANK", -1))
@@ -466,7 +484,7 @@ def main():
                                                             test_batch=1,
                                                             datathread=args.dataloader_num_workers,
                                                             logger=logger)
-
+    
     # because the optimizer not optimized every time, so we need to calculate how many steps it optimizes,
     # it is usually optimized by 
     # Scheduler and math around the number of training steps.
@@ -733,23 +751,24 @@ def main():
                 ema_unet.copy_to(unet.parameters())
                 
             # validation inference here
-            # log_validation(
-            #     vae=vae,
-            #     text_encoder=text_encoder,
-            #     tokenizer=tokenizer,
-            #     unet=unet,
-            #     args=args,
-            #     accelerator=accelerator,
-            #     weight_dtype=weight_dtype,
-            #     scheduler=noise_scheduler,
-            #     epoch=epoch,
-            #     input_image_path=args.input_rgb_path,  
-            # )
-            
+            val_mean, val_std, acc_list = log_validation(
+                vae=vae,
+                text_encoder=text_encoder,
+                tokenizer=tokenizer,
+                unet=unet,
+                args=args,
+                accelerator=accelerator,
+                weight_dtype=weight_dtype,
+                scheduler=noise_scheduler,
+                epoch=epoch,
+            )
+            # Log the validation results to tensorboard
+            accelerator.log({"val_mean": val_mean, "val_std": val_std}, step=global_step)
+            accelerator.log({"val_acc": acc_list}, step=global_step)
             if args.use_ema:
                 # Switch back to the original UNet parameters.
                 ema_unet.restore(unet.parameters())
-                
+            
     # Create the pipeline for training and savet
     accelerator.wait_for_everyone()
     accelerator.end_training()

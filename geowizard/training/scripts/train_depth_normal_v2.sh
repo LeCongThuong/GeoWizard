@@ -1,8 +1,9 @@
 # accelerate config
 root_path='/home/hmi/Downloads/renders/'
-csv_path='/home/hmi/Downloads/csv_split/train.csv'
+csv_train_path='/home/hmi/Downloads/csv_split/train.csv'
+csv_valid_path='/home/hmi/Downloads/csv_split/valid.csv'
 output_dir='/home/hmi/Downloads/geowizards'
-
+output_valid_dir = '/media/hmi/Transcend1/geowizard_checkpoints'
 pretrained_model_name_or_path="stabilityai/stable-diffusion-2"
 train_batch_size=2
 gradient_accumulation_steps=16
@@ -18,7 +19,8 @@ accelerate launch --config_file ../node_config/1gpu.yaml \
                 ../training/train_depth_normal_v2.py \
                   --pretrained_model_name_or_path $pretrained_model_name_or_path \
                   --dataset_path $root_path  \
-                  --csv_path $csv_path \
+                  --csv_train_path $csv_train_path \
+                  --csv_valid_path $csv_valid_path \
                   --output_dir $output_dir \
                   --checkpointing_steps $checkpointing_steps \
                   --train_batch_size $train_batch_size \
