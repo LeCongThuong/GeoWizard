@@ -286,7 +286,7 @@ def parse_args():
     parser.add_argument(
         "--validation_epochs",
         type=int,
-        default=5,
+        default=2,
         help="Run validation every X epochs.",
     )
 
@@ -751,18 +751,19 @@ def main():
                 ema_unet.copy_to(unet.parameters())
                 
             # validation inference here
-            val_mean, val_std, acc_list = log_validation(
-                vae=vae,
-                text_encoder=text_encoder,
-                tokenizer=tokenizer,
-                unet=unet,
-                args=args,
-                scheduler=noise_scheduler,
-                epoch=epoch,
-            )
-            # Log the validation results to tensorboard
-            accelerator.log({"val_mean": val_mean, "val_std": val_std}, step=global_step)
-            accelerator.log({"val_acc": acc_list}, step=global_step)
+            if (epoch) % args.validation_epochs == 0:
+                val_mean, val_std, acc_list = log_validation(
+                    vae=vae,
+                    text_encoder=text_encoder,
+                    tokenizer=tokenizer,
+                    unet=unet,
+                    args=args,
+                    scheduler=noise_scheduler,
+                    epoch=epoch,
+                )
+                # Log the validation results to tensorboard
+                accelerator.log({"val_mean": val_mean, "val_std": val_std}, step=global_step)
+                accelerator.log({"val_acc": acc_list}, step=global_step)
             if args.use_ema:
                 # Switch back to the original UNet parameters.
                 ema_unet.restore(unet.parameters())

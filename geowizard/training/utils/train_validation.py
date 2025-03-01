@@ -213,7 +213,7 @@ def  log_validation(
     logging.info(f"Found {n_images} images")
 
     denoise_steps = 10
-    ensemble_size= 3
+    ensemble_size= 1
     processing_res = 768
     match_input_res = True
     domain = "indoor"

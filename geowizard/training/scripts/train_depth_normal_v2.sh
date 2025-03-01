@@ -1,13 +1,13 @@
 # accelerate config
 root_path='/home/hmi/Downloads/renders/'
-csv_train_path='/home/hmi/Downloads/csv_split/train.csv'
-csv_valid_path='/home/hmi/Downloads/csv_split/train.csv'
-output_dir='/home/hmi/Downloads/geowizards'
-output_valid_dir='/media/hmi/Transcend1/geowizard_checkpoints'
+csv_train_path='/media/hmi/Transcend1/normal_synthesis_dataset/datasets/csv_split/train_full.csv'
+csv_valid_path='/media/hmi/Transcend1/normal_synthesis_dataset/datasets/csv_split/val_full.csv'
+output_dir='/media/hmi/Transcend1/geowizard_checkpoints/training_logs'
+output_valid_dir='/media/hmi/Transcend1/geowizard_checkpoints/validation_results'
 pretrained_model_name_or_path="stabilityai/stable-diffusion-2"
 train_batch_size=2
 gradient_accumulation_steps=16
-num_train_epochs=100
+num_train_epochs=10
 checkpointing_steps=1000
 learning_rate=3e-5
 lr_warmup_steps=0

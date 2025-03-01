@@ -38,9 +38,10 @@ class SynthesisDataset(Dataset):
         # read data path from csv file with 3 headers (dataset, rgb, depth, normal)
         self.data_info = pd.read_csv(csv_path, header=None)
         self.num_img = len(self.data_info)
+        print("Number of train images: ", self.num_img)
 
         self.samples = []
-        for image_idx in range(1):
+        for image_idx in range(self.num_img):
             sample = dict()
             sample['rgb'] = os.path.join(self.data_dir, self.data_info.iloc[image_idx, 0])
             sample['depth'] = os.path.join(self.data_dir, self.data_info.iloc[image_idx, 1])

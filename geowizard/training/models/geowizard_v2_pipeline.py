@@ -137,13 +137,13 @@ class DepthNormalEstimationPipeline(DiffusionPipeline):
         
         for batch in iterable_bar:
             (batched_image, )= batch  # here the image is still around 0-1
-
-            depth_pred_raw, normal_pred_raw = self.single_infer(
-                input_rgb=batched_image,
-                num_inference_steps=denoising_steps,
-                domain=domain,
-                show_pbar=show_progress_bar,
-            )
+            with torch.cuda.amp.autocast(): 
+                depth_pred_raw, normal_pred_raw = self.single_infer(
+                    input_rgb=batched_image,
+                    num_inference_steps=denoising_steps,
+                    domain=domain,
+                    show_pbar=show_progress_bar,
+                )
             depth_pred_ls.append(depth_pred_raw.detach().clone())
             normal_pred_ls.append(normal_pred_raw.detach().clone())
         
@@ -316,6 +316,7 @@ class DepthNormalEstimationPipeline(DiffusionPipeline):
         # scale latent
         depth_latent = depth_latent / self.latent_scale_factor
         # decode
+        depth_latent = depth_latent.to(torch.float16)
         z = self.vae.post_quant_conv(depth_latent)
         stacked = self.vae.decoder(z)
         # mean of output channels

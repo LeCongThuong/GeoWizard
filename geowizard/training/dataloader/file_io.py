@@ -100,7 +100,7 @@ def read_synthesis_depth_png(file_path):
         raise ValueError("Image is not 16-bit")
     
     # get mask from depth, max value is invalid depth, set it to 0
-    mask = depth_image >= 35000
+    mask = depth_image <= 50000
 
     # Convert the 16-bit image to floating-point and normalize to [0, 1]
     depth_norm = depth_image.astype(np.float32) / 65535.0
@@ -137,7 +137,7 @@ def read_synthesis_depth_8bit_png(file_path):
 
 def read_synthesis_normal_png(file_path):
     # Open and convert the image to RGB
-    normal_image = Image.open(file_path).convert('RGB').resize((512, 512), Image.NEAREST)
+    normal_image = Image.open(file_path).convert('RGB').resize((512, 512), resample=Image.Resampling.NEAREST)
 
     # Convert to NumPy array and normalize to [0, 1]
     normal_array = np.array(normal_image).astype(np.float32) / 255.0
