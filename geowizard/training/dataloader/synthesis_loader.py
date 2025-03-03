@@ -58,12 +58,16 @@ class SynthesisDataset(Dataset):
 
     def __getitem__(self, index):
         sample = {}
-        sample_path = self.samples[index]
-        H, W = self.img_size
-
         sample['domain'] = torch.Tensor([1., 0., 0.]) # indoor
-
-        sample['rgb'] = read_img(sample_path['rgb'])  # [H, W, 3]
+        H, W = self.img_size
+        try:
+            sample_path = self.samples[index]
+            sample['rgb'] = read_img(sample_path['rgb'])  # [H, W, 3]
+        except Exception as e:
+            print("Error at index: ", sample_path['rgb'])
+            sample_path = self.samples[index + 1]
+            sample['rgb'] = read_img(sample_path['rgb'])
+            
         sample['depth'], sample['normal'], sample["mask"] = read_depth_normal_synthesis(sample_path['depth'], sample_path['normal'])
         H_ori, W_ori = sample['rgb'].shape[:2]
 

@@ -49,7 +49,7 @@ from utils.de_normalized import align_scale_shift
 from utils.depth2normal import *
 from utils.train_validation import log_validation
 from utils.dataset_configuration import prepare_dataset, depth_scale_shift_normalization,  resize_max_res_tensor
-
+from pathlib import Path
 from PIL import Image
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
@@ -334,10 +334,12 @@ def main():
     ''' ------------------------Configs Preparation----------------------------'''
     # give the args parsers
     args = parse_args()
+    torch.backends.cuda.matmul.allow_tf32 = True
     # save  the tensorboard log files
     logging_dir = os.path.join(args.output_dir, args.logging_dir)
+    Path(logging_dir).mkdir(exist_ok=True, parents=True)
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
-
+    print("Logging sys init, at: ", logging_dir)
     # tell the gradient_accumulation_steps, mix precison, and tensorboard
     accelerator = Accelerator(
         gradient_accumulation_steps=args.gradient_accumulation_steps,
@@ -505,8 +507,6 @@ def main():
     unet, optimizer, train_loader, lr_scheduler = accelerator.prepare(
         unet, optimizer, train_loader, lr_scheduler
     )
-
-
     # using EMA
     if args.use_ema:
         ema_unet = EMAModel(unet.parameters(), model_cls=UNet2DConditionModel, model_config=unet.config)

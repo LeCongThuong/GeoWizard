@@ -8,10 +8,10 @@ pretrained_model_name_or_path="stabilityai/stable-diffusion-2"
 train_batch_size=2
 gradient_accumulation_steps=16
 num_train_epochs=10
-checkpointing_steps=1000
+checkpointing_steps=2500
 learning_rate=3e-5
 lr_warmup_steps=0
-dataloader_num_workers=8
+dataloader_num_workers=16
 tracker_project_name='pretrain_tracker'
 seed=1234
 
