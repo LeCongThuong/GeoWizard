@@ -129,9 +129,25 @@ def read_synthesis_normal_png(file_path):
     # Stack normalized components
     normalized_normal_map = np.stack((nx, ny, nz), axis=2)
     return normalized_normal_map
-    
 
-def cal_metrics(data_dir, pred_root_dir, test_csv_file):
+def change_axis_coordinate(normal):
+    tt = np.zeros_like(normal)
+    tt[:, :, 0] = normal[:, :, 1]
+    tt[:, :, 1] = normal[:, :, 0]
+    tt[:, :, 2] = -normal[:, :, 2]
+    return tt
+
+def read_photoface_normal_map(normal_path, mask_path):
+    normal_map = np.load(normal_path)
+    normal_map = change_axis_coordinate(normal_map)
+    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+    # 255 is for valid pixel, 0 is for invalid pixel
+    mask = mask == 255
+    normal_map[mask] = np.array([0., 0., -1.])
+    return normal_map, mask
+
+
+def cal_metrics(data_dir, pred_root_dir, test_csv_file, dataset_name="synthesis"):
     """
     Evaluate normal estimation results on the dataset.
 
@@ -145,20 +161,29 @@ def cal_metrics(data_dir, pred_root_dir, test_csv_file):
     std_list = []
 
     test_data_info = pd.read_csv(test_csv_file, header=None)
-    test_data_info.columns = ["image_path", "depth_path", "gt_normal_path"]
+    if dataset_name == "synthesis":
+        test_data_info.columns = ["image_path", "depth_path", "gt_normal_path"]
+    else:
+        test_data_info.columns = ["image_path", "depth_path", "gt_normal_path", "mask_path"]
+
     for index, row in tqdm(test_data_info.iterrows()):
         img_path = os.path.join(data_dir, row["image_path"])
         np_gt_path = os.path.join(data_dir, row["gt_normal_path"])
         depth_path = os.path.join(data_dir, row["depth_path"])
-        print(depth_path)
         rgb_name_base = Path(img_path).stem
         pred_name_base = rgb_name_base + "_pred"
         pred_path = os.path.join(pred_root_dir, f"{pred_name_base}.npy")
         np_pred = torch.unsqueeze(torch.from_numpy((np.load(pred_path))), 0)
-        _, mask = read_synthesis_depth_png(depth_path)
-        np_gt = read_synthesis_normal_png(np_gt_path)
-        np_gt = torch.unsqueeze(torch.from_numpy(np_gt), 0)
-        np_mask = torch.unsqueeze(torch.from_numpy(mask), 0)
+        if dataset_name == "synthesis":
+            _, mask = read_synthesis_depth_png(depth_path)
+            np_gt = read_synthesis_normal_png(np_gt_path)
+            np_gt = torch.unsqueeze(torch.from_numpy(np_gt), 0)
+            np_mask = torch.unsqueeze(torch.from_numpy(mask), 0)
+        else:
+            mask_path = os.path.join(data_dir, row["mask_path"])
+            np_gt, mask = read_photoface_normal_map(np_gt_path, mask_path)
+            np_gt = torch.unsqueeze(np_gt, 0)
+            np_mask = torch.unsqueeze(mask, 0)
         results = compute_normal_metrics(np_pred, np_gt, np_mask)
         mean_angle_list.append(results["mean"])
         std_list.append(results["std"])
@@ -265,9 +290,9 @@ def  log_validation(
             normal_colored.save(normal_colored_save_path)
 
         # -------------------- Evaluation --------------------
-    mean_angle, std_angle, acc = cal_metrics(input_dir, output_dir_normal_color, csv_file)
+    mean_angle, std_angle, acc = cal_metrics(input_dir, output_dir_normal_color, csv_file, dataset_name=args.dataset_name)
     # write to file the results
-    with open(os.path.join(epoch_output_dir, "results.txt"), "w") as f:
+    with open(os.path.join(epoch_output_dir, f"results.txt"), "w") as f:
         f.write(f"Mean Angle: {mean_angle}\n")
         f.write(f"Standard Deviation: {std_angle}\n")
         f.write(f"Accuracy: {list(acc)}\n")

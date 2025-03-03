@@ -5,6 +5,7 @@ csv_valid_path='/media/hmi/Transcend1/normal_synthesis_dataset/datasets/csv_spli
 output_dir='/media/hmi/Transcend1/geowizard_checkpoints/training_logs'
 output_valid_dir='/media/hmi/Transcend1/geowizard_checkpoints/validation_results'
 pretrained_model_name_or_path="stabilityai/stable-diffusion-2"
+fined_tune_from_checkpoint='lemonaddie/geowizard'
 train_batch_size=2
 gradient_accumulation_steps=16
 num_train_epochs=10
@@ -12,13 +13,16 @@ checkpointing_steps=2500
 learning_rate=3e-5
 lr_warmup_steps=0
 dataloader_num_workers=16
+dataset_name='photoface'
 tracker_project_name='pretrain_tracker'
 seed=1234
 
 accelerate launch --config_file ../node_config/1gpu.yaml \
                 ../training/train_depth_normal_v2.py \
                   --pretrained_model_name_or_path $pretrained_model_name_or_path \
+                  --fined_tune_from_checkpoint $fined_tune_from_checkpoint \
                   --dataset_path $root_path  \
+                  --dataset_name $dataset_name \
                   --csv_train_path $csv_train_path \
                   --csv_valid_path $csv_valid_path \
                   --output_dir $output_dir \

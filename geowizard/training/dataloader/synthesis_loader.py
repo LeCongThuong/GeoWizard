@@ -24,7 +24,7 @@ import pandas as pd
 
 
 class SynthesisDataset(Dataset):
-    def __init__(self, data_dir, csv_path,
+    def __init__(self, data_dir, csv_path, dataset_name = "synthesis",
                  transform=None):
         super(SynthesisDataset, self).__init__()
 
@@ -33,6 +33,7 @@ class SynthesisDataset(Dataset):
         self.transform = transform
         self.img_size = (768, 768)
         self.csv_path = csv_path
+        self.dataset_name = dataset_name
         self.samples = []
 
         # read data path from csv file with 3 headers (dataset, rgb, depth, normal)
@@ -40,13 +41,16 @@ class SynthesisDataset(Dataset):
         self.num_img = len(self.data_info)
         print("Number of train images: ", self.num_img)
 
+
+
         self.samples = []
         for image_idx in range(self.num_img):
             sample = dict()
             sample['rgb'] = os.path.join(self.data_dir, self.data_info.iloc[image_idx, 0])
             sample['depth'] = os.path.join(self.data_dir, self.data_info.iloc[image_idx, 1])
             sample['normal'] = os.path.join(self.data_dir, self.data_info.iloc[image_idx, 2])
-
+            if self.dataset_name == "photoface":
+                sample['mask'] = os.path.join(self.data_dir, self.data_info.iloc[image_idx, 3])
 
             # data augmentation args
             sample['RandomHorizontalFlip'] = 0.4
@@ -68,7 +72,11 @@ class SynthesisDataset(Dataset):
             sample_path = self.samples[index + 1]
             sample['rgb'] = read_img(sample_path['rgb'])
             
-        sample['depth'], sample['normal'], sample["mask"] = read_depth_normal_synthesis(sample_path['depth'], sample_path['normal'])
+        if self.dataset_name == "photoface":
+            sample['depth'], sample['normal'], sample["mask"] = self.read_photoface_dataset(sample_path['depth'], sample_path['normal'], sample_path['mask'])
+        else:
+            sample['depth'], sample['normal'], sample["mask"] = self.read_depth_normal_synthesis(sample_path['depth'], sample_path['normal'])
+
         H_ori, W_ori = sample['rgb'].shape[:2]
 
         # 1. Random Crop
