@@ -76,7 +76,7 @@ def compute_normal_metrics(pred, label, mask, degree_list=[20, 25, 30]):
             "std": std_angle, 
             "acc_list": degree_acc_list}
 
-def read_synthesis_depth_png(file_path, threshold=35000):
+def read_synthesis_depth_png(file_path, threshold=50000):
     """
     Reads a 16-bit grayscale PNG depth image and converts it to a normalized floating-point depth map.
     
@@ -96,12 +96,12 @@ def read_synthesis_depth_png(file_path, threshold=35000):
         raise ValueError("Image is not 16-bit")
     
     # get mask from depth, max value is invalid depth, set it to 0
-    mask = depth_image >= threshold
+    mask = depth_image <=threshold
 
     # Convert the 16-bit image to floating-point and normalize to [0, 1]
     depth_norm = depth_image.astype(np.float32) / 65535.0
     
-    return depth_norm, ~mask
+    return depth_norm, mask
 
 def read_synthesis_normal_png(file_path):
     # Open and convert the image to RGB
@@ -128,6 +128,7 @@ def read_synthesis_normal_png(file_path):
 
     # Stack normalized components
     normalized_normal_map = np.stack((nx, ny, nz), axis=2)
+    normalized_normal_map *= -1
     return normalized_normal_map
 
 def change_axis_coordinate(normal):
