@@ -179,7 +179,7 @@ def read_photoface_dataset(depth_path, normal_path, mask_path):
 
     
 def change_axis_coordinate(normal):
-    tt = torch.zeros_like(normal)
+    tt = np.zeros_like(normal)
     tt[:, :, 0] = normal[:, :, 1]
     tt[:, :, 1] = - normal[:, :, 0]
     tt[:, :, 2] = normal[:, :, 2]
