@@ -17,6 +17,7 @@ import os
 # Get Dataset Here
 def prepare_dataset(data_dir=None,
                     csv_path=None,
+                    dataset_name='synthesis',
                     batch_size=1,
                     test_batch=1,
                     datathread=4,
@@ -25,7 +26,7 @@ def prepare_dataset(data_dir=None,
     # set the config parameters
     dataset_config_dict = dict()
     
-    train_dataset = SynthesisDataset(data_dir=data_dir, csv_path=csv_path)
+    train_dataset = SynthesisDataset(data_dir=data_dir, csv_path=csv_path, datataset_name=dataset_name)
 
     img_height, img_width = train_dataset.get_img_size()
 

@@ -80,7 +80,7 @@ def read_depth_normal_hypersim(depth_path, normal_path, K, metric_scale):
     normal /= (np.linalg.norm(normal, ord=2, axis=2, keepdims=True) + 1e-5)
     return depth, normal
 
-def read_synthesis_depth_png(file_path):
+def read_synthesis_depth_png(file_path, mask_threshold=50000):
     """
     Reads a 16-bit grayscale PNG depth image and converts it to a normalized floating-point depth map.
     
@@ -100,14 +100,14 @@ def read_synthesis_depth_png(file_path):
         raise ValueError("Image is not 16-bit")
     
     # get mask from depth, max value is invalid depth, set it to 0
-    mask = depth_image <= 50000
+    mask = depth_image <= mask_threshold
 
     # Convert the 16-bit image to floating-point and normalize to [0, 1]
     depth_norm = depth_image.astype(np.float32) / 65535.0
     
     return depth_norm, mask
 
-def read_synthesis_depth_8bit_png(file_path):
+def read_synthesis_depth_8bit_png(file_path, mask_threshold=128):
     """
     Reads a 16-bit grayscale PNG depth image and converts it to a normalized floating-point depth map.
     
@@ -127,8 +127,8 @@ def read_synthesis_depth_8bit_png(file_path):
     if depth_image.dtype != np.uint16:
         raise ValueError("Image is not 16-bit")
     
-    # get mask from depth, max value is invalid depth, set it to 0
-    mask = depth_image >= 128
+    # get mask from depth, max value is valid depth, set it to 1
+    mask = depth_image <= mask_threshold
 
     # Convert the 16-bit image to floating-point and normalize to [0, 1]
     depth_norm = depth_image.astype(np.float32) / 255.0
@@ -162,6 +162,29 @@ def read_synthesis_normal_png(file_path):
     normalized_normal_map = np.stack((nx, ny, nz), axis=2)
     normalized_normal_map *= -1
     return normalized_normal_map
+
+def read_photoface_dataset(depth_path, normal_path, mask_path):
+    normal_map = np.load(normal_path)
+    normal_map = change_axis_coordinate(normal_map)
+
+    depth = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
+    depth_norm = depth.astype(np.float32) / 65535.0
+    # read mask as grayscale image
+    mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+    # 255 is for valid pixel, 0 is for invalid pixel
+    mask = mask == 255
+    depth[mask] = 10.
+    normal_map[mask] = np.array([0., 0., -1.])
+    return depth, normal_map, mask
+
+    
+def change_axis_coordinate(normal):
+    tt = torch.zeros_like(normal)
+    tt[:, :, 0] = normal[:, :, 1]
+    tt[:, :, 1] = - normal[:, :, 0]
+    tt[:, :, 2] = normal[:, :, 2]
+    tt *= -1
+    return tt
 
 def read_depth_normal_synthesis(depth_path, normal_path):
     depth, mask = read_synthesis_depth_png(depth_path)

@@ -72,6 +72,12 @@ def parse_args():
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
 
+    parser.add_argument(
+        "--fined_tune_from_checkpoint",
+        type=str,
+        default=None,
+        help="Path to the checkpoint to fine-tune from.",
+    )
     # parser.add_argument(
     #     "--input_rgb_path",
     #     type=str,
@@ -85,6 +91,13 @@ def parse_args():
         default="/data/",
         required=True,
         help="The Root Dataset Path.",
+    )
+
+    parser.add_argument(
+        "--dataset_name",
+        type=str,
+        default="photoface",
+        help="The dataset name.",
     )
 
     parser.add_argument(
@@ -371,7 +384,7 @@ def main():
     logger.info("loading the noise scheduler and the tokenizer from {}".format(args.pretrained_model_name_or_path), main_process_only=True)
     vae = AutoencoderKL.from_pretrained(args.pretrained_model_name_or_path, subfolder='vae')
     text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_name_or_path, subfolder='text_encoder')
-    unet = UNet2DConditionModel.from_pretrained('lemonaddie/geowizard', subfolder='unet_v2')
+    unet = UNet2DConditionModel.from_pretrained(args.fined_tune_from_checkpoint, subfolder='unet_v2')
 
     # unet = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet",
     #                                                 in_channels=8, sample_size=96,
@@ -482,6 +495,7 @@ def main():
     with accelerator.main_process_first():
         train_loader, dataset_config_dict = prepare_dataset(data_dir=args.dataset_path,
                                                             csv_path=args.csv_train_path,
+                                                            dataset_name=args.dataset_name,
                                                             batch_size=args.train_batch_size,
                                                             test_batch=1,
                                                             datathread=args.dataloader_num_workers,
