@@ -13,7 +13,7 @@ checkpointing_steps=2500
 learning_rate=3e-5
 lr_warmup_steps=0
 dataloader_num_workers=16
-dataset_name='photoface'
+dataset_name='synthesis'
 tracker_project_name='pretrain_tracker'
 seed=1234
 

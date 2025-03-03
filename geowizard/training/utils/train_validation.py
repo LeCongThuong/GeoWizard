@@ -105,7 +105,7 @@ def read_synthesis_depth_png(file_path, threshold=50000):
 
 def read_synthesis_normal_png(file_path):
     # Open and convert the image to RGB
-    normal_image = Image.open(file_path).convert('RGB')
+    normal_image = Image.open(file_path).convert('RGB').resize((512, 512), resample=Image.Resampling.NEAREST)
 
     # Convert to NumPy array and normalize to [0, 1]
     normal_array = np.array(normal_image).astype(np.float32) / 255.0
