@@ -335,6 +335,7 @@ def main():
     # give the args parsers
     args = parse_args()
     torch.backends.cuda.matmul.allow_tf32 = True
+
     # save  the tensorboard log files
     logging_dir = os.path.join(args.output_dir, args.logging_dir)
     Path(logging_dir).mkdir(exist_ok=True, parents=True)
