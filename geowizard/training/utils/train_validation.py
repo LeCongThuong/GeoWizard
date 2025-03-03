@@ -131,10 +131,10 @@ def read_synthesis_normal_png(file_path):
     return normalized_normal_map
 
 def change_axis_coordinate(normal):
-    tt = torch.zeros_like(normal)
+    tt = np.zeros_like(normal)
     tt[:, :, 0] = normal[:, :, 1]
-    tt[:, :, 1] = - normal[:, :, 0]
-    tt[:, :, 2] = normal[:, :, 2]
+    tt[:, :, 1] = normal[:, :, 0]
+    tt[:, :, 2] = -normal[:, :, 2]
     return tt
 
 def read_photoface_normal_map(normal_path, mask_path):
@@ -182,8 +182,8 @@ def cal_metrics(data_dir, pred_root_dir, test_csv_file, dataset_name="synthesis"
         else:
             mask_path = os.path.join(data_dir, row["mask_path"])
             np_gt, mask = read_photoface_normal_map(np_gt_path, mask_path)
-            np_gt = torch.unsqueeze(torch.from_numpy(np_gt), 0)
-            np_mask = torch.unsqueeze(torch.from_numpy(mask), 0)
+            np_gt = torch.unsqueeze(np_gt, 0)
+            np_mask = torch.unsqueeze(mask, 0)
         results = compute_normal_metrics(np_pred, np_gt, np_mask)
         mean_angle_list.append(results["mean"])
         std_list.append(results["std"])

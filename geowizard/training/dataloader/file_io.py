@@ -181,9 +181,8 @@ def read_photoface_dataset(depth_path, normal_path, mask_path):
 def change_axis_coordinate(normal):
     tt = np.zeros_like(normal)
     tt[:, :, 0] = normal[:, :, 1]
-    tt[:, :, 1] = - normal[:, :, 0]
-    tt[:, :, 2] = normal[:, :, 2]
-    tt *= -1
+    tt[:, :, 1] = normal[:, :, 0]
+    tt[:, :, 2] = -normal[:, :, 2]
     return tt
 
 def read_depth_normal_synthesis(depth_path, normal_path):
