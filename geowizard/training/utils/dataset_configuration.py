@@ -26,7 +26,7 @@ def prepare_dataset(data_dir=None,
     # set the config parameters
     dataset_config_dict = dict()
     
-    train_dataset = SynthesisDataset(data_dir=data_dir, csv_path=csv_path, datataset_name=dataset_name)
+    train_dataset = SynthesisDataset(data_dir=data_dir, csv_path=csv_path, dataset_name=dataset_name)
 
     img_height, img_width = train_dataset.get_img_size()
 

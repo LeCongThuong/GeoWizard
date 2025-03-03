@@ -73,9 +73,9 @@ class SynthesisDataset(Dataset):
             sample['rgb'] = read_img(sample_path['rgb'])
             
         if self.dataset_name == "photoface":
-            sample['depth'], sample['normal'], sample["mask"] = self.read_photoface_dataset(sample_path['depth'], sample_path['normal'], sample_path['mask'])
+            sample['depth'], sample['normal'], sample["mask"] = read_photoface_dataset(sample_path['depth'], sample_path['normal'], sample_path['mask'])
         else:
-            sample['depth'], sample['normal'], sample["mask"] = self.read_depth_normal_synthesis(sample_path['depth'], sample_path['normal'])
+            sample['depth'], sample['normal'], sample["mask"] = read_depth_normal_synthesis(sample_path['depth'], sample_path['normal'])
 
         H_ori, W_ori = sample['rgb'].shape[:2]
 
