@@ -137,10 +137,10 @@ def read_synthesis_depth_8bit_png(file_path, mask_threshold=128):
 
 def read_synthesis_normal_png(file_path):
     # Open and convert the image to RGB
-    normal_image = Image.open(file_path).convert('RGB').resize((512, 512), resample=Image.Resampling.NEAREST)
+    normal_image = Image.open(file_path).convert('RGB').resize((512, 512), resample=Image.NEAREST)
 
     # Convert to NumPy array and normalize to [0, 1]
-    normal_array = np.array(normal_image).astype(np.float32) / 255.0
+    normal_array = np.array(normal_image).astype(np.float32) / 255
 
     # Split into R, G, B channels
     r = normal_array[:, :, 0]
@@ -187,9 +187,9 @@ def change_axis_coordinate(normal):
 
 def read_depth_normal_synthesis(depth_path, normal_path):
     depth, mask = read_synthesis_depth_png(depth_path)
-    depth[mask] = 10.
+    depth[~mask] = 10.
     normal = read_synthesis_normal_png(normal_path)
-    normal[mask] = np.array([0., 0., -1.])
+    normal[~mask] = np.array([0., 0., -1.])
     return depth, normal, mask
 
 def read_depth_normal_replica(depth_path, normal_path, K, metric_scale):
@@ -431,3 +431,22 @@ def read_occlusion_mid(filename):
     img_np = np.array(img)
     valid_mask_combine = (img_np<=128).astype(np.float)    
     return valid_mask_combine
+
+
+if __name__ == "__main__":
+    depth_img_path = "/media/hmi/Transcend1/normal_synthesis_dataset/datasets/facescape/16894/depth_rot_24.14_-29.93_-2.14.png0001.png"
+    depth_norm, mask = read_synthesis_depth_png(depth_img_path)
+    print(depth_norm.max(), depth_norm.min(), depth_norm.mean(), depth_norm.shape)
+    import matplotlib.pyplot as plt
+    from PIL import Image
+    depth_norm[~mask] = 1
+    plt.imshow(depth_norm, cmap='Spectral')
+    plt.show()
+    normal_path = "/media/hmi/Transcend1/normal_synthesis_dataset/datasets/facescape/16894/normal_rot_24.14_-29.93_-2.14.png"
+    normal = read_synthesis_normal_png(normal_path)
+    normal[~mask] = np.array([0., 0., -1.])
+    print(normal.max(), normal.min(), normal.mean())
+    normal = -normal
+    normal = (normal + 1) * 0.5
+    plt.imshow(normal)
+    plt.show()
