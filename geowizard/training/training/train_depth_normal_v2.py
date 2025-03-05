@@ -51,6 +51,9 @@ from utils.train_validation import log_validation
 from utils.dataset_configuration import prepare_dataset, depth_scale_shift_normalization,  resize_max_res_tensor
 from pathlib import Path
 from PIL import Image
+from torch.utils.tensorboard import SummaryWriter
+
+
 
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
 # check_min_version("0.26.0.dev0")
@@ -71,6 +74,7 @@ def parse_args():
         required=True,
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
+    
 
     parser.add_argument(
         "--fined_tune_from_checkpoint",
@@ -351,6 +355,8 @@ def main():
 
     # save  the tensorboard log files
     logging_dir = os.path.join(args.output_dir, args.logging_dir)
+    # Initialize TensorBoard writer
+    writer = SummaryWriter(log_dir=logging_dir)
     Path(logging_dir).mkdir(exist_ok=True, parents=True)
     accelerator_project_config = ProjectConfiguration(project_dir=args.output_dir, logging_dir=logging_dir)
     print("Logging sys init, at: ", logging_dir)
@@ -714,7 +720,7 @@ def main():
                 optimizer.step()
                 lr_scheduler.step()
                 optimizer.zero_grad()
-            
+            writer.add_scalar('train/loss', train_loss, global_step)   
             # Checks if the accelerator has performed an optimization step behind the scenes
             if accelerator.sync_gradients:
                 if args.use_ema:
@@ -752,6 +758,7 @@ def main():
                         logger.info(f"Saved state to {save_path}")
 
             logs = {"step_loss": loss.detach().item(), "lr": lr_scheduler.get_last_lr()[0]}
+            
             progress_bar.set_postfix(**logs)
 
             # Stop training
