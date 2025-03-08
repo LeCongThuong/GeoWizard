@@ -128,7 +128,6 @@ def read_synthesis_normal_png(file_path):
 
     # Stack normalized components
     normalized_normal_map = np.stack((nx, ny, nz), axis=2)
-    normalized_normal_map *= -1
     return normalized_normal_map
 
 def change_axis_coordinate(normal):
@@ -185,6 +184,7 @@ def cal_metrics(data_dir, pred_root_dir, test_csv_file, dataset_name="synthesis"
             np_gt, mask = read_photoface_normal_map(np_gt_path, mask_path)
             np_gt = torch.unsqueeze(np_gt, 0)
             np_mask = torch.unsqueeze(mask, 0)
+            np_pred *= (-1)
         results = compute_normal_metrics(np_pred, np_gt, np_mask)
         mean_angle_list.append(results["mean"])
         std_list.append(results["std"])
