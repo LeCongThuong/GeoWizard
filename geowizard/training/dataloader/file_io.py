@@ -173,9 +173,9 @@ def read_photoface_dataset(depth_path, normal_path, mask_path):
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
     # 255 is for valid pixel, 0 is for invalid pixel
     mask = mask == 255
-    depth[mask] = 10.
-    normal_map[mask] = np.array([0., 0., -1.])
-    return depth, normal_map, mask
+    depth_norm[~mask] = 10.
+    normal_map[~mask] = np.array([0., 0., -1.])
+    return depth_norm, normal_map, mask
 
     
 def change_axis_coordinate(normal):

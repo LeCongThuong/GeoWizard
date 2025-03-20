@@ -47,7 +47,7 @@ import accelerate
 import cv2
 from utils.de_normalized import align_scale_shift
 from utils.depth2normal import *
-from utils.train_validation import log_validation
+from utils.train_validation import log_validation, log_photoface_validation
 from utils.dataset_configuration import prepare_dataset, depth_scale_shift_normalization,  resize_max_res_tensor
 from pathlib import Path
 from PIL import Image
@@ -331,7 +331,8 @@ def parse_args():
 
     if env_local_rank != -1 and env_local_rank != args.local_rank:
         args.local_rank = env_local_rank
-
+    if args.dataset_name == "photoface":
+        args.dataset_path = ""
     return args
 
 def pyramid_noise_like(x, timesteps, discount=0.9):
@@ -391,7 +392,7 @@ def main():
     logger.info("loading the noise scheduler and the tokenizer from {}".format(args.pretrained_model_name_or_path), main_process_only=True)
     vae = AutoencoderKL.from_pretrained(args.pretrained_model_name_or_path, subfolder='vae')
     text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_name_or_path, subfolder='text_encoder')
-    unet = UNet2DConditionModel.from_pretrained(args.fined_tune_from_checkpoint, subfolder='unet_v2')
+    unet = UNet2DConditionModel.from_pretrained(args.fined_tune_from_checkpoint, subfolder='unet_ema')
 
     # unet = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet",
     #                                                 in_channels=8, sample_size=96,
@@ -531,7 +532,6 @@ def main():
     # using EMA
     if args.use_ema:
         ema_unet = EMAModel(unet.parameters(), model_cls=UNet2DConditionModel, model_config=unet.config)
-    if args.use_ema:
         ema_unet.to(accelerator.device)
 
     # For mixed precision training we cast all non-trainable weigths (vae, non-lora text_encoder and non-lora unet) to half-precision
@@ -774,15 +774,26 @@ def main():
                 
             # validation inference here
             if (epoch) % args.validation_epochs == 0:
-                val_mean, val_std, acc_list = log_validation(
-                    vae=vae,
-                    text_encoder=text_encoder,
-                    tokenizer=tokenizer,
-                    unet=unet,
-                    args=args,
-                    scheduler=noise_scheduler,
-                    epoch=epoch,
-                )
+                if args.dataset_name == "photoface":
+                    val_mean, val_std, acc_list = log_photoface_validation(
+                        vae=vae,
+                        text_encoder=text_encoder,
+                        tokenizer=tokenizer,
+                        unet=unet,
+                        args=args,
+                        scheduler=noise_scheduler,
+                        epoch=epoch,
+                    )
+                else:
+                    val_mean, val_std, acc_list = log_validation(
+                        vae=vae,
+                        text_encoder=text_encoder,
+                        tokenizer=tokenizer,
+                        unet=unet,
+                        args=args,
+                        scheduler=noise_scheduler,
+                        epoch=epoch,
+                    )
                 # Log the validation results to tensorboard
                 accelerator.log({"val_mean": val_mean, "val_std": val_std}, step=global_step)
                 accelerator.log({"val_acc": acc_list}, step=global_step)
