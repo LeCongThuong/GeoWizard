@@ -128,7 +128,6 @@ def read_synthesis_normal_png(file_path):
 
     # Stack normalized components
     normalized_normal_map = np.stack((nx, ny, nz), axis=2)
-    normalized_normal_map *= -1
     return normalized_normal_map
 
 def change_axis_coordinate(normal):
