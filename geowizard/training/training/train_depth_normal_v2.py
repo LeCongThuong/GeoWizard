@@ -48,6 +48,7 @@ import cv2
 from utils.de_normalized import align_scale_shift
 from utils.depth2normal import *
 from utils.train_validation import log_validation, log_photoface_validation
+from utils.losses import ScaleAndShiftInvariantLoss, AngularLoss
 from utils.dataset_configuration import prepare_dataset, depth_scale_shift_normalization,  resize_max_res_tensor
 from pathlib import Path
 from PIL import Image
@@ -629,6 +630,21 @@ def main():
 
     # torch.cuda.empty_cache()  # Clear GPU memory
     # using the epochs to training the model
+      # Init loss dictionary for logging
+    loss_logger = { "ssi": 0.0,             # depth level loss
+                    "ssi_count": 0.0,
+                    "normals_angular": 0.0, # normals level loss
+                    "normals_angular_count": 0.0,
+                    "latent": 0.0,
+                    "latent_count": 0.0,
+                    }
+
+    ssi_loss          = ScaleAndShiftInvariantLoss()
+    angular_loss_norm = AngularLoss()
+
+    alpha_prod = noise_scheduler.alphas_cumprod.to(accelerator.device, dtype=weight_dtype)
+    beta_prod  = 1 - alpha_prod
+
     for epoch in range(first_epoch, args.num_train_epochs):
         unet.train() 
         train_loss = 0.0
@@ -650,6 +666,8 @@ def main():
                 normal = batch['normal'].clip(-1., 1.)
                 normal_resized = resize_max_res_tensor(normal, mode='normal')
 
+                mask = torch.ones_like(normal_resized, dtype=torch.bool)
+
                 # encode latents
                 h_batch = vae.encoder(torch.cat((image_data_resized, depth_resized_normalized, normal_resized), dim=0).to(weight_dtype))
                 moments_batch = vae.quant_conv(h_batch)
@@ -663,14 +681,18 @@ def main():
                 
                 # in the Stable Diffusion, the iterations numbers is 1000 for adding the noise and denosing.
                 # Sample a random timestep for each image
-                timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,), device=depth_latents.device).repeat(2)
+                # timesteps = torch.randint(0, noise_scheduler.config.num_train_timesteps, (bsz,), device=depth_latents.device).repeat(2)
+                # timesteps = timesteps.long()
+                # add more
+                timesteps = torch.ones((bsz,), device=depth_latents.device).repeat(2) * (noise_scheduler.config.num_train_timesteps-1)
                 timesteps = timesteps.long()
 
                 # Sample noise that we'll add to the latents
-                noise = pyramid_noise_like(geo_latents, timesteps) # create multi-res. noise
+                noise = torch.zeros_like(geo_latents).to(accelerator.device) # pyramid_noise_like(geo_latents, timesteps) # create multi-res. noise
                 
                 # add noise to the depth lantents
-                noisy_geo_latents = noise_scheduler.add_noise(geo_latents, noise, timesteps)
+                # noisy_geo_latents = noise_scheduler.add_noise(geo_latents, noise, timesteps)
+                noisy_geo_latents = noise
 
                 # Get the target for loss depending on the prediction type
                 if args.prediction_type is not None:
@@ -706,7 +728,56 @@ def main():
                                 timesteps, 
                                 encoder_hidden_states=batch_text_embed,
                                 class_labels=class_embedding).sample 
-                loss = F.mse_loss(noise_pred.float(), target.float(), reduction="mean")
+                loss = torch.tensor(0.0, device=accelerator.device, requires_grad=True)
+                latent_loss = F.mse_loss(noise_pred.float(), target.float(), reduction="mean")
+                loss += latent_loss
+                loss_logger["latent"] += latent_loss.detach().item()
+                loss_logger["latent_count"] += 1
+
+                alpha_prod_t = alpha_prod[timesteps].view(-1, 1, 1, 1)
+                beta_prod_t  =  beta_prod[timesteps].view(-1, 1, 1, 1)
+                if noise_scheduler.config.prediction_type == "v_prediction":
+                    current_latent_estimate = (alpha_prod_t**0.5) * noisy_geo_latents - (beta_prod_t**0.5) * noise_pred
+                elif noise_scheduler.config.prediction_type == "epsilon":
+                    current_latent_estimate = (noisy_geo_latents - beta_prod_t ** (0.5) * noise_pred) / alpha_prod_t ** (0.5)
+                else:
+                    raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
+                # clip or threshold prediction (only here for completeness, not used by SD2 or our models with v_prediction)
+                if noise_scheduler.config.thresholding:
+                    pred_original_sample = noise_scheduler._threshold_sample(pred_original_sample)
+                elif noise_scheduler.config.clip_sample:
+                    pred_original_sample = pred_original_sample.clamp(
+                        -noise_scheduler.config.clip_sample_range, noise_scheduler.config.clip_sample_range
+                    )
+                # Decode the latent estimate
+                current_latent_estimate = current_latent_estimate / vae.config.scaling_factor
+                z = vae.post_quant_conv(current_latent_estimate)
+                current_estimate = vae.decoder(z)
+                current_depth_estimate, current_normal_estimate = torch.chunk(current_estimate, 2, dim=0)
+                # Process depth and get GT
+                current_depth_estimate = current_depth_estimate.mean(dim=1, keepdim=True) 
+                current_depth_estimate = torch.clamp(current_depth_estimate,-1,1) 
+                # Process normals and get GT
+                norm = torch.norm(current_normal_estimate, p=2, dim=1, keepdim=True) + 1e-5
+                current_normal_estimate = current_normal_estimate / norm
+                current_normal_estimate = torch.clamp(current_normal_estimate,-1,1) 
+                # Compute task-specific loss             
+                estimation_loss = 0
+                depth_scale  = 1.0 # ssi loss is roughly 2x the angular loss
+                normal_scale = 1.0
+                # Scale and shift invariant loss
+                estimation_loss_ssi = ssi_loss(current_depth_estimate, depth_resized, mask)
+                if not torch.isnan(estimation_loss_ssi).any():
+                    estimation_loss = estimation_loss + (estimation_loss_ssi*depth_scale)
+                    loss_logger["ssi"] += estimation_loss_ssi.detach().item()   
+                    loss_logger["ssi_count"] += 1
+                # Angular loss
+                estimation_loss_ang_norm = angular_loss_norm(current_normal_estimate, normal_resized, mask)
+                if not torch.isnan(estimation_loss_ang_norm).any():
+                    estimation_loss = estimation_loss + (estimation_loss_ang_norm*normal_scale)
+                    loss_logger["normals_angular"] += estimation_loss_ang_norm.detach().item()   
+                    loss_logger["normals_angular_count"] += 1
+                loss = loss + estimation_loss
 
                 # Gather the losses across all processes for logging (if we use distributed training).
                 avg_loss = accelerator.gather(loss.repeat(args.train_batch_size)).mean()
@@ -729,6 +800,21 @@ def main():
                 global_step += 1
                 accelerator.log({"train_loss": train_loss}, step=global_step)
                 train_loss = 0.0
+
+                # add
+                # logg depth and normals losses separately
+                for key in list(loss_logger.keys()):
+                    if "_count" not in key:
+                        count_key = key + "_count"
+                        if loss_logger[count_key] != 0:
+                            # compute avg
+                            loss_logger[key] /= loss_logger[count_key]
+                            # log loss
+                            loss_name = key + "_loss"
+                            accelerator.log({loss_name: loss_logger[key]}, step=global_step)
+                # set all losses to 0
+                for key in list(loss_logger.keys()):
+                    loss_logger[key] = 0.0
                 
                 # saving the checkpoints
                 if global_step % args.checkpointing_steps == 0:
@@ -774,6 +860,7 @@ def main():
                 
             # validation inference here
             if (epoch) % args.validation_epochs == 0:
+                noise_scheduler.timestep_spacing = "trailing"
                 if args.dataset_name == "photoface":
                     val_mean, val_std, acc_list = log_photoface_validation(
                         vae=vae,
@@ -794,6 +881,7 @@ def main():
                         scheduler=noise_scheduler,
                         epoch=epoch,
                     )
+                noise_scheduler.timestep_spacing = "trailing"
                 # Log the validation results to tensorboard
                 accelerator.log({"val_mean": val_mean, "val_std": val_std}, step=global_step)
                 accelerator.log({"val_acc": acc_list}, step=global_step)

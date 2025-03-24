@@ -224,14 +224,14 @@ class DepthNormalEstimationPipeline(DiffusionPipeline):
         device = input_rgb.device
 
         # Set timesteps: inherit from the diffuison pipeline
-        self.scheduler.set_timesteps(num_inference_steps, device=device) # here the numbers of the steps is only 10.
+        self.scheduler.set_timesteps(num_inference_steps, device=device) # [T]
         timesteps = self.scheduler.timesteps  # [T]
         
         # encode image
         rgb_latent = self.encode_RGB(input_rgb)
         
         # Initial geometric maps (Guassian noise)
-        geo_latent = torch.randn(rgb_latent.shape, device=device, dtype=self.dtype).repeat(2,1,1,1)
+        geo_latent = torch.zeros(rgb_latent.shape, device=device, dtype=self.dtype).repeat(2,1,1,1) #torch.randn(rgb_latent.shape, device=device, dtype=self.dtype).repeat(2,1,1,1)
         rgb_latent = rgb_latent.repeat(2,1,1,1)
         
         # hybrid switcher 

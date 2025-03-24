@@ -163,7 +163,7 @@ def main():
     vae = AutoencoderKL.from_pretrained(args.pretrained_model_name_or_path, subfolder='vae')
     text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_name_or_path, subfolder='text_encoder')
     unet = UNet2DConditionModel.from_pretrained(args.fined_tune_from_checkpoint, subfolder='unet_ema')
-                
+    noise_scheduler.timestep_spacing = "trailing"            
     val_mean, val_std, acc_list = log_photoface_validation(
         vae=vae,
         text_encoder=text_encoder,
