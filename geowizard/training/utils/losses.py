@@ -17,7 +17,7 @@ class ScaleAndShiftInvariantLoss(nn.Module):
     def forward(self, prediction, target, mask):
         if mask.ndim == 4:
             mask = mask.squeeze(1)
-        prediction, target = prediction.squeeze(1), target.squeeze(1)
+        prediction, target = torch.mean(prediction, axis=1), target[:, 0, :, :]
         # add
         with torch.autocast(device_type='cuda', enabled=False):
             prediction = prediction.float()

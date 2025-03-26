@@ -29,7 +29,6 @@ class SynthesisDataset(Dataset):
         super(SynthesisDataset, self).__init__()
 
         self.data_dir = data_dir
-        print("data dir: ", self.data_dir)
         self.transform = transform
         self.img_size = (512, 512)
         self.csv_path = csv_path
@@ -40,8 +39,6 @@ class SynthesisDataset(Dataset):
         self.data_info = pd.read_csv(csv_path, header=None)
         self.num_img = len(self.data_info)
         print("Number of train images: ", self.num_img)
-
-
 
         self.samples = []
         for image_idx in range(self.num_img):

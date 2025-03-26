@@ -304,7 +304,7 @@ def parse_args():
     parser.add_argument(
         "--validation_epochs",
         type=int,
-        default=2,
+        default=1,
         help="Run validation every X epochs.",
     )
 
@@ -393,7 +393,7 @@ def main():
     logger.info("loading the noise scheduler and the tokenizer from {}".format(args.pretrained_model_name_or_path), main_process_only=True)
     vae = AutoencoderKL.from_pretrained(args.pretrained_model_name_or_path, subfolder='vae')
     text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_name_or_path, subfolder='text_encoder')
-    unet = UNet2DConditionModel.from_pretrained(args.fined_tune_from_checkpoint, subfolder='unet_ema')
+    unet = UNet2DConditionModel.from_pretrained(args.fined_tune_from_checkpoint, subfolder='unet_v2')
 
     # unet = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet",
     #                                                 in_channels=8, sample_size=96,
@@ -666,7 +666,7 @@ def main():
                 normal = batch['normal'].clip(-1., 1.)
                 normal_resized = resize_max_res_tensor(normal, mode='normal')
 
-                mask = torch.ones_like(normal_resized, dtype=torch.bool)
+                mask = torch.ones_like(normal_resized, dtype=torch.bool)[:, 0:1, :, :]
 
                 # encode latents
                 h_batch = vae.encoder(torch.cat((image_data_resized, depth_resized_normalized, normal_resized), dim=0).to(weight_dtype))
@@ -730,7 +730,7 @@ def main():
                                 class_labels=class_embedding).sample 
                 loss = torch.tensor(0.0, device=accelerator.device, requires_grad=True)
                 latent_loss = F.mse_loss(noise_pred.float(), target.float(), reduction="mean")
-                loss += latent_loss
+                loss = loss + latent_loss
                 loss_logger["latent"] += latent_loss.detach().item()
                 loss_logger["latent_count"] += 1
 
@@ -743,6 +743,7 @@ def main():
                 else:
                     raise ValueError(f"Unknown prediction type {noise_scheduler.config.prediction_type}")
                 # clip or threshold prediction (only here for completeness, not used by SD2 or our models with v_prediction)
+                current_latent_estimate = current_latent_estimate.to(weight_dtype)
                 if noise_scheduler.config.thresholding:
                     pred_original_sample = noise_scheduler._threshold_sample(pred_original_sample)
                 elif noise_scheduler.config.clip_sample:
