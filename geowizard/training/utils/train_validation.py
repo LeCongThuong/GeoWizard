@@ -214,20 +214,23 @@ def cal_photoface_metrics(data_dir, pred_root_dir, test_csv_file, dataset_name="
         test_data_info.columns = ["image_path", "depth_path", "gt_normal_path", "mask_path"]
 
     for index, row in tqdm(test_data_info.iterrows()):
-        img_path = os.path.join(data_dir, row["image_path"])
-        np_gt_path = os.path.join(data_dir, row["gt_normal_path"])
-        depth_path = os.path.join(data_dir, row["depth_path"])
-        identity_dir = "/".join(img_path.split("/")[-3:-1])
-        rgb_name_base = Path(img_path).stem
-        pred_name_base = rgb_name_base + "_pred"
-        pred_path = os.path.join(pred_root_dir, identity_dir, f"{pred_name_base}.npy")
-        np_pred = torch.unsqueeze(torch.from_numpy((np.load(pred_path))), 0)
-      
-        mask_path = os.path.join(data_dir, row["mask_path"])
-        np_gt, mask = read_photoface_normal_map(np_gt_path, mask_path)
-        np_gt = torch.unsqueeze(torch.from_numpy(-np_gt), 0)
-        np_mask = torch.unsqueeze(torch.from_numpy(mask), 0)
+        try:
+            img_path = os.path.join(data_dir, row["image_path"])
+            print(img_path)
+            np_gt_path = os.path.join(data_dir, row["gt_normal_path"])
+            depth_path = os.path.join(data_dir, row["depth_path"])
+            identity_dir = "/".join(img_path.split("/")[-3:-1])
+            rgb_name_base = Path(img_path).stem
+            pred_name_base = rgb_name_base + "_pred"
+            pred_path = os.path.join(pred_root_dir, identity_dir, f"{pred_name_base}.npy")
+            np_pred = torch.unsqueeze(torch.from_numpy((np.load(pred_path))), 0)
         
+            mask_path = os.path.join(data_dir, row["mask_path"])
+            np_gt, mask = read_photoface_normal_map(np_gt_path, mask_path)
+            np_gt = torch.unsqueeze(torch.from_numpy(-np_gt), 0)
+            np_mask = torch.unsqueeze(torch.from_numpy(mask), 0)
+        except Exception as e:
+            continue
         results = compute_normal_metrics(np_pred, np_gt, np_mask)
         mean_angle_list.append(results["mean"])
         std_list.append(results["std"])
@@ -451,3 +454,9 @@ def  log_photoface_validation(
         f.write(f"Accuracy: {list(acc)}\n")
 
     return mean_angle, std_angle, acc
+
+if __name__=="__main__":
+    output_dir_normal_color = "/media/hmi/Transcend/geowizard_checkpoints/validation_results/validation/normal"
+    csv_file = '/mnt/hmi/thuong/Photoface_dist/geowizard_photoface_TrainValTest/dataset_0/test.csv'
+    mean_angle, std_angle, acc = cal_photoface_metrics("", output_dir_normal_color, csv_file)
+    print(mean_angle, std_angle, acc)

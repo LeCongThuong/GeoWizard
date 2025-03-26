@@ -2,10 +2,10 @@
 root_path='/home/hmi/Downloads/renders/'
 csv_train_path='/mnt/hmi/thuong/Photoface_dist/geowizard_photoface_TrainValTest/dataset_0/train.csv'
 csv_valid_path='/mnt/hmi/thuong/Photoface_dist/geowizard_photoface_TrainValTest/dataset_0/val.csv'
-output_dir='/media/hmi/Transcend/photoface_checkpoints/training_logs'
-output_valid_dir='/media/hmi/Transcend/photoface_checkpoints/validation_results'
+output_dir='/media/hmi/Transcend/photoface_drcheckpoints/training_logs'
+output_valid_dir='/media/hmi/Transcend/photoface_dr_checkpoints/validation_results'
 pretrained_model_name_or_path="stabilityai/stable-diffusion-2"
-fined_tune_from_checkpoint='/media/hmi/Transcend/geowizard_checkpoints/training_logs/checkpoint-22500'
+fined_tune_from_checkpoint='/media/hmi/Transcend/photoface_drcheckpoints/training_logs/checkpoint-2500'
 train_batch_size=2
 gradient_accumulation_steps=16
 num_train_epochs=100

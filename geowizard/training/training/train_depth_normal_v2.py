@@ -54,7 +54,6 @@ from PIL import Image
 from torch.utils.tensorboard import SummaryWriter
 
 
-
 # Will error if the minimal version of diffusers is not installed. Remove at your own risks.
 # check_min_version("0.26.0.dev0")
 
