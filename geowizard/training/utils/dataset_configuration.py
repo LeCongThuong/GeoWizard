@@ -63,7 +63,7 @@ def depth_scale_shift_normalization(depth):
 
 
 
-def resize_max_res_tensor(input_tensor, mode, recom_resolution=512):
+def resize_max_res_tensor(input_tensor, mode, recom_resolution=768):
     assert input_tensor.shape[1]==3
     original_H, original_W = input_tensor.shape[2:]
     downscale_factor = min(recom_resolution/original_H, recom_resolution/original_W)

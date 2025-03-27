@@ -282,7 +282,7 @@ def  log_validation(
 
     denoise_steps = 1
     ensemble_size= 1
-    processing_res = 512
+    processing_res = 768
     match_input_res = True
     domain = "indoor"
     color_map = "Spectral"
@@ -386,7 +386,7 @@ def  log_photoface_validation(
 
     denoise_steps = 1
     ensemble_size= 1
-    processing_res = 512
+    processing_res = 768
     match_input_res = True
     domain = "indoor"
     color_map = "Spectral"
