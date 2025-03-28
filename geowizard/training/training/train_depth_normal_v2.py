@@ -302,7 +302,7 @@ def parse_args():
     parser.add_argument(
         "--validation_epochs",
         type=int,
-        default=2,
+        default=1,
         help="Run validation every X epochs.",
     )
 
@@ -391,7 +391,7 @@ def main():
     logger.info("loading the noise scheduler and the tokenizer from {}".format(args.pretrained_model_name_or_path), main_process_only=True)
     vae = AutoencoderKL.from_pretrained(args.pretrained_model_name_or_path, subfolder='vae')
     text_encoder = CLIPTextModel.from_pretrained(args.pretrained_model_name_or_path, subfolder='text_encoder')
-    unet = UNet2DConditionModel.from_pretrained(args.fined_tune_from_checkpoint, subfolder='unet_ema')
+    unet = UNet2DConditionModel.from_pretrained(args.fined_tune_from_checkpoint, subfolder='unet_v2')
 
     # unet = UNet2DConditionModel.from_pretrained(args.pretrained_model_name_or_path, subfolder="unet",
     #                                                 in_channels=8, sample_size=96,
