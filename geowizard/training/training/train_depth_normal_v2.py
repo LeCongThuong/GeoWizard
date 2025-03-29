@@ -337,14 +337,25 @@ def parse_args():
 def pyramid_noise_like(x, timesteps, discount=0.9):
     b, c, w_ori, h_ori = x.shape 
     u = nn.Upsample(size=(w_ori, h_ori), mode='bilinear')
-    noise = torch.randn_like(x)
+
+    # work in float32 to avoid bfloat16 issue
+    x_dtype = x.dtype
+    device = x.device
+
+    noise = torch.randn_like(x, dtype=torch.float32)
     scale = 1.5
     for i in range(10):
-        r = np.random.random()*scale + scale # Rather than always going 2x, 
-        w, h = max(1, int(w_ori/(r**i))), max(1, int(h_ori/(r**i)))
-        noise += u(torch.randn(b, c, w, h).to(x)) * (timesteps[...,None,None,None]/1000) * discount**i
-        if w==1 or h==1: break # Lowest resolution is 1x1
-    return noise/noise.std() # Scaled back to roughly unit variance
+        r = np.random.random() * scale + scale
+        w, h = max(1, int(w_ori / (r**i))), max(1, int(h_ori / (r**i)))
+        if w == 1 or h == 1:
+            break
+        low_res_noise = torch.randn(b, c, w, h, dtype=torch.float32, device=device)
+        upsampled = u(low_res_noise)
+        weight = (timesteps[..., None, None, None] / 1000).to(dtype=torch.float32)
+        noise += upsampled * weight * discount**i
+
+    noise = noise / noise.std()
+    return noise.to(dtype=x_dtype)  # cast back to original dtype if needed
     
 def main():
 
