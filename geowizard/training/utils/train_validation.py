@@ -215,6 +215,10 @@ def cal_photoface_metrics(data_dir, pred_root_dir, test_csv_file, dataset_name="
 
     for index, row in tqdm(test_data_info.iterrows()):
         try:
+            mask_path = os.path.join(data_dir, row["mask_path"])
+            np_gt, mask = read_photoface_normal_map(np_gt_path, mask_path)
+            np_gt = torch.unsqueeze(torch.from_numpy(-np_gt), 0)
+            np_mask = torch.unsqueeze(torch.from_numpy(mask), 0)
             img_path = os.path.join(data_dir, row["image_path"])
             print(img_path)
             np_gt_path = os.path.join(data_dir, row["gt_normal_path"])
@@ -223,13 +227,11 @@ def cal_photoface_metrics(data_dir, pred_root_dir, test_csv_file, dataset_name="
             rgb_name_base = Path(img_path).stem
             pred_name_base = rgb_name_base + "_pred"
             pred_path = os.path.join(pred_root_dir, identity_dir, f"{pred_name_base}.npy")
-            np_pred = torch.unsqueeze(torch.from_numpy((np.load(pred_path))), 0)
-        
-            mask_path = os.path.join(data_dir, row["mask_path"])
-            np_gt, mask = read_photoface_normal_map(np_gt_path, mask_path)
-            np_gt = torch.unsqueeze(torch.from_numpy(-np_gt), 0)
-            np_mask = torch.unsqueeze(torch.from_numpy(mask), 0)
+            np_pred = np.load(pred_path)
+            np_pred[~mask] = np.array([0., 0., 1.])
+            np_pred = torch.unsqueeze(torch.from_numpy(np_pred), 0)
         except Exception as e:
+            print("Error: ", e)
             continue
         results = compute_normal_metrics(np_pred, np_gt, np_mask)
         mean_angle_list.append(results["mean"])

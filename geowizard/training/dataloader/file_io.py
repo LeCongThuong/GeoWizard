@@ -163,14 +163,19 @@ def read_synthesis_normal_png(file_path):
     normalized_normal_map *= -1
     return normalized_normal_map
 
-def read_photoface_dataset(depth_path, normal_path, mask_path):
+def read_photoface_dataset(depth_path, normal_path, mask_path, is_train=True):
     normal_map = np.load(normal_path)
     normal_map = change_axis_coordinate(normal_map)
 
     depth = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED)
     depth_norm = depth.astype(np.float32) / 65535.0
     # read mask as grayscale image
+    # add more
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
+    if not is_train:
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21))
+        dilated = cv2.dilate(mask, kernel, iterations=1)
+        mask = (dilated > 0).astype(np.uint8) * 255
     # 255 is for valid pixel, 0 is for invalid pixel
     mask = mask == 255
     depth_norm[~mask] = 10.
