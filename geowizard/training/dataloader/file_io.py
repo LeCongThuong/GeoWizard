@@ -172,10 +172,11 @@ def read_photoface_dataset(depth_path, normal_path, mask_path, is_train=True):
     # read mask as grayscale image
     # add more
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
-    if not is_train:
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21))
-        dilated = cv2.dilate(mask, kernel, iterations=1)
-        mask = (dilated > 0).astype(np.uint8) * 255
+    mask = (mask > 128).astype(np.uint8) * 255
+    # if is_train:
+    #     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (21, 21))
+    #     dilated = cv2.dilate(mask, kernel, iterations=1)
+    #     mask = (dilated > 0).astype(np.uint8) * 255
     # 255 is for valid pixel, 0 is for invalid pixel
     mask = mask == 255
     depth_norm[~mask] = 10.

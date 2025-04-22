@@ -2,8 +2,8 @@
 root_path='/home/hmi/Downloads/renders/'
 csv_train_path='/mnt/hmi/thuong/Photoface_dist/geowizard_photoface_TrainValTest/dataset_0/train.csv'
 csv_valid_path='/mnt/hmi/thuong/Photoface_dist/geowizard_photoface_TrainValTest/dataset_0/val.csv'
-output_dir='/media/hmi/Transcend/geowizard_photoface_checkpoints_4/training_logs'
-output_valid_dir='/media/hmi/Transcend/geowizard_photoface_checkpoints_4/validation_results'
+output_dir='/media/hmi/Transcend1/geowizard_photoface_checkpoints_mask_v2/training_logs'
+output_valid_dir='/media/hmi/Transcend1/geowizard_photoface_checkpoints_mask_v2/validation_results'
 pretrained_model_name_or_path="stabilityai/stable-diffusion-2"
 fined_tune_from_checkpoint='lemonaddie/geowizard'
 train_batch_size=2

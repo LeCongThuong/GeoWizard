@@ -142,7 +142,7 @@ def read_photoface_normal_map(normal_path, mask_path):
     normal_map = change_axis_coordinate(normal_map)
     mask = cv2.imread(mask_path, cv2.IMREAD_GRAYSCALE)
     # 255 is for valid pixel, 0 is for invalid pixel
-    mask = mask == 255
+    mask = mask > 128
     normal_map[~mask] = np.array([0., 0., -1.])
     return normal_map, mask
 
@@ -215,13 +215,13 @@ def cal_photoface_metrics(data_dir, pred_root_dir, test_csv_file, dataset_name="
 
     for index, row in tqdm(test_data_info.iterrows()):
         try:
+            
+            np_gt_path = os.path.join(data_dir, row["gt_normal_path"])
             mask_path = os.path.join(data_dir, row["mask_path"])
             np_gt, mask = read_photoface_normal_map(np_gt_path, mask_path)
             np_gt = torch.unsqueeze(torch.from_numpy(-np_gt), 0)
             np_mask = torch.unsqueeze(torch.from_numpy(mask), 0)
             img_path = os.path.join(data_dir, row["image_path"])
-            print(img_path)
-            np_gt_path = os.path.join(data_dir, row["gt_normal_path"])
             depth_path = os.path.join(data_dir, row["depth_path"])
             identity_dir = "/".join(img_path.split("/")[-3:-1])
             rgb_name_base = Path(img_path).stem
@@ -285,7 +285,7 @@ def  log_validation(
     n_images = len(data_info)
     logging.info(f"Found {n_images} images")
 
-    denoise_steps = 50
+    denoise_steps = 10
     ensemble_size= 1
     processing_res = 768
     match_input_res = True
@@ -389,7 +389,7 @@ def  log_photoface_validation(
     n_images = len(data_info)
     logging.info(f"Found {n_images} images")
 
-    denoise_steps = 50
+    denoise_steps = 10
     ensemble_size= 1
     processing_res = 768
     match_input_res = True
@@ -458,7 +458,7 @@ def  log_photoface_validation(
     return mean_angle, std_angle, acc
 
 if __name__=="__main__":
-    output_dir_normal_color = "/media/hmi/Transcend/geowizard_checkpoints/validation_results/validation/normal"
+    output_dir_normal_color = "/media/hmi/Transcend1/geowizard_checkpoints_validation_mask/validation_results/validation/normal"
     csv_file = '/mnt/hmi/thuong/Photoface_dist/geowizard_photoface_TrainValTest/dataset_0/test.csv'
     mean_angle, std_angle, acc = cal_photoface_metrics("", output_dir_normal_color, csv_file)
     print(mean_angle, std_angle, acc)

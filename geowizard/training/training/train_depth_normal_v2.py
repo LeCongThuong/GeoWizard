@@ -420,7 +420,7 @@ def main():
     # Freeze vae and text_encoder and set unet to trainable.
     vae.requires_grad_(False)
     text_encoder.requires_grad_(False)
-    vae.train()
+    # vae.train()
     unet.train() # only make the unet-trainable        
 
     # using xformers for efficient attentions.
